@@ -9,6 +9,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      YC_SERVICE_ACCOUNT_KEY_FILE: /tmp/sa-key.json
+      YC_CLOUD_ID: b1g9q8gn2kmvh94lk1sr
+      YC_FOLDER_ID: b1ge1609vkqipa8tm1qg
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
