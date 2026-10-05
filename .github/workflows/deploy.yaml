@@ -9,11 +9,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    env:
-      YC_SERVICE_ACCOUNT_KEY_FILE: /tmp/sa-key.json
-      YC_CLOUD_ID: b1g9q8gn2kmvh94lk1sr
-      YC_FOLDER_ID: b1ge1609vkqipa8tm1qg
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -32,10 +27,17 @@ jobs:
         run: |
           curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
           sudo ln -sf $HOME/yandex-cloud/bin/yc /usr/local/bin/yc
+
+          yc config profile create default
+          yc config set service-account-key /tmp/sa-key.json
+          yc config set cloud-id b1g9q8gn2kmvh94lk1sr
+          yc config set folder-id b1ge1609vkqipa8tm1qg
+
           mkdir -p $HOME/.kube
           echo '${{ secrets.KUBE_CONFIG }}' | base64 -d > $HOME/.kube/config
           sudo sed -i "s|/home/roman/yandex-cloud/bin/yc|/usr/local/bin/yc|g" $HOME/.kube/config
           chmod 600 $HOME/.kube/config
+
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
