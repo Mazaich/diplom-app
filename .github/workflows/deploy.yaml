@@ -17,26 +17,25 @@ jobs:
         run: |
           echo '${{ secrets.YC_SA_KEY }}' > /tmp/sa-key.json
           cat /tmp/sa-key.json | docker login --username json_key --password-stdin cr.yandex
-          rm /tmp/sa-key.json
 
-      - name: Build image
+      - name: Build and push
         run: |
           docker build -t cr.yandex/${{ secrets.YC_REGISTRY_ID }}/app:${{ github.ref_name }} .
-
-      - name: Push image
-        run: |
           docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/app:${{ github.ref_name }}
 
-      - name: Setup kubectl
+      - name: Setup yc and kubectl
         run: |
+          curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+          sudo ln -sf $HOME/yandex-cloud/bin/yc /usr/local/bin/yc
           mkdir -p $HOME/.kube
           echo '${{ secrets.KUBE_CONFIG }}' | base64 -d > $HOME/.kube/config
+          sudo sed -i "s|/home/roman/yandex-cloud/bin/yc|/usr/local/bin/yc|g" $HOME/.kube/config
           chmod 600 $HOME/.kube/config
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
-      - name: Deploy to Kubernetes
+      - name: Deploy
         run: |
-          kubectl set image deployment/nginx-app nginx=cr.yandex/${{ secrets.YC_REGISTRY_ID }}/app:${{ github.ref_name }} --namespace default
-          kubectl rollout status deployment/nginx-app --namespace default --timeout=5m
+          kubectl set image deployment/nginx-app nginx=cr.yandex/${{ secrets.YC_REGISTRY_ID }}/app:${{ github.ref_name }}
+          kubectl rollout status deployment/nginx-app --timeout=5m
